@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Civitai Manager</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<header>
+  <button class="hamburger" onclick="togglePanel()" title="Toggle panel">☰</button>
+  <h1>Civitai Manager</h1>
+  <div style="display:flex;gap:6px;flex:1;max-width:480px">
+    <input type="text" id="url-input" placeholder="URL or model ID…"
+      style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter')loadFromUrl()">
+    <button class="btn" onclick="loadFromUrl()">Load</button>
+  </div>
+  <button class="btn sec" onclick="openSettings()">⚙ Settings</button>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('search')">Search</button>
+      <button class="tab" onclick="switchTab('local')">Local Files</button>
+    </div>
+
+    <div class="tab-content active" id="tab-search">
+      <div class="search-row">
+        <input type="text" id="q" placeholder="Search models…" onkeydown="if(event.key==='Enter')doSearch()">
+        <button class="btn" id="search-btn" onclick="doSearch()">Go</button>
+      </div>
+      <div class="form-row">
+        <label>Type</label>
+        <select id="f-type">
+          <option value="">Any</option>
+          <option>Checkpoint</option><option>TextualInversion</option>
+          <option>Hypernetwork</option><option>AestheticGradient</option>
+          <option>LORA</option><option>LoCon</option>
+          <option>Controlnet</option><option>Poses</option><option>Wildcards</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Sort</label>
+        <select id="f-sort">
+          <option value="">Default</option>
+          <option>Highest Rated</option><option>Most Downloaded</option><option>Newest</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Period</label>
+        <select id="f-period">
+          <option value="">Any</option>
+          <option>AllTime</option><option>Year</option><option>Month</option>
+          <option>Week</option><option>Day</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>NSFW</label>
+        <select id="f-nsfw">
+          <option value="">Unset</option>
+          <option value="true">Show</option>
+          <option value="false">Hide</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Tag</label>
+        <input type="text" id="f-tag" placeholder="e.g. anime">
+      </div>
+      <div class="form-row">
+        <label>Creator</label>
+        <input type="text" id="f-creator" placeholder="Username">
+      </div>
+      <div class="form-row">
+        <label>Results per page</label>
+        <input type="number" id="f-limit" value="20" min="1" max="100">
+      </div>
+      <div class="pagination">
+        <button class="btn sec" id="prev-btn" disabled onclick="goPage(-1)">‹</button>
+        <span class="page-info" id="page-info">—</span>
+        <button class="btn sec" id="next-btn" disabled onclick="goPage(1)">›</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-local">
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input type="text" id="local-search" placeholder="Filter…" oninput="renderLocalFiles()" style="flex:1">
+        <button class="btn sec" onclick="loadLocalFiles()" title="Refresh">↺</button>
+      </div>
+      <div class="form-row">
+        <select id="local-sort" onchange="renderLocalFiles()">
+          <option value="name-asc">Name A→Z</option>
+          <option value="name-desc">Name Z→A</option>
+          <option value="size-desc">Size largest first</option>
+          <option value="size-asc">Size smallest first</option>
+          <option value="type-asc">Type</option>
+        </select>
+      </div>
+      <div id="local-breadcrumb"></div>
+      <div id="local-list"></div>
+    </div>
+  </div>
+
+  <div class="middle-panel" id="middle-panel" style="display:none">
+    <div class="panel-header" id="results-header">Results</div>
+    <div class="results-list" id="results-list">
+      <div class="empty">Search for models above</div>
+    </div>
+  </div>
+
+  <div class="right-panel" id="right-panel">
+    <div class="placeholder">Select a model to view details</div>
+  </div>
+</div>
+
+<div class="statusbar" id="statusbar">Ready — configure your API key in Settings</div>
+
+<div class="overlay" id="save-modal" style="display:none" onclick="if(event.target===this)closeSaveModal()">
+  <div class="modal">
+    <h2>Save Location</h2>
+    <div class="form-row">
+      <label>Subdirectory</label>
+      <select id="save-subdir" style="width:100%"></select>
+    </div>
+    <div class="form-row">
+      <label>Filename (without extension)</label>
+      <input type="text" id="save-stem" placeholder="Leave blank to use server filename">
+    </div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="closeSaveModal()">Cancel</button>
+      <button class="btn" onclick="confirmSave()">⬇ Download</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settings-modal" style="display:none" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h2>Settings</h2>
+    <div class="form-row">
+      <label>Civitai API Key</label>
+      <input type="password" id="s-key" placeholder="Paste your API key (optional)">
+    </div>
+    <div class="form-row">
+      <label>Download Directory</label>
+      <input type="text" id="s-dir" placeholder="/home/user/civitai_models">
+    </div>
+    <div class="modal-actions">
+      <button class="btn sec" onclick="closeSettings()">Cancel</button>
+      <button class="btn" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

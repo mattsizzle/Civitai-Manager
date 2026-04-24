@@ -1,0 +1,21 @@
+[project]
+name = "civitai-app"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "requests",
+    "jinja2",
+    "aiofiles",
+]
+
+[project.scripts]
+civitai-manager = "civitai_manager:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["civitai_manager"]
